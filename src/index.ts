@@ -3,6 +3,7 @@
 import { readdir } from 'node:fs/promises';
 import { join, basename } from 'node:path';
 import https from 'node:https';
+import http from 'node:http';
 import { spawn } from 'node:child_process';
 import chalk from 'chalk';
 import ora from 'ora';
@@ -35,7 +36,6 @@ export function doPush(args: IArgType) {
           pushFile(pkg, curRegistry, args)
             .then(() => {})
             .catch(error => {
-              console.error(error);
               console.error(
                 `push failed: ${chalk.bgRed(
                   `${pkg.name}@${pkg.version}`,
@@ -77,7 +77,7 @@ export function handleArgs(args: IArgType) {
 
 async function pushFile(pkg: PkgInfo, curRegistry: string, args: IArgType) {
   const { name, version } = pkg;
-  const versions = await getPackageVersions(name, args);
+  const versions = await getPackageVersions(name, curRegistry, args);
   if (versions.includes(version)) {
     console.warn(
       chalk.yellow(`警告：包 ${name}@${version} 已存在，跳过上传。`),
@@ -96,8 +96,10 @@ function uploadPackage(
     const publishArgs = [
       'publish',
       pkg.path,
-      `--registry="${curRegistry}"`,
-      '--provenance=false',
+      '--registry',
+      curRegistry,
+      '--provenance',
+      'false',
     ];
     const child = spawn('npm', publishArgs, {
       cwd: args.cwd,
@@ -163,12 +165,18 @@ export function parsePkgFiles(files: string[]): PkgInfo[] {
 }
 async function getPackageVersions(
   name: string,
-  args: IArgType,
+  curRegistry: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _args: IArgType,
 ): Promise<string[]> {
   return new Promise((resolve, reject) => {
     const encoded = encodeURIComponent(name);
+    const u = new URL(curRegistry);
+    const isHttps = u.protocol === 'https:';
+    const client = isHttps ? https : http;
     const options = {
-      hostname: args['--registry'],
+      hostname: u.hostname,
+      port: u.port ? Number(u.port) : isHttps ? 443 : 80,
       path: `/${encoded}`,
       method: 'GET',
       headers: {
@@ -176,7 +184,7 @@ async function getPackageVersions(
       },
     } as const;
 
-    const req = https.request(options, res => {
+    const req = client.request(options, res => {
       let raw = '';
       res.setEncoding('utf8');
       res.on('data', chunk => (raw += chunk));
