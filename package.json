@@ -1,0 +1,71 @@
+{
+  "name": "push-npm-tar",
+  "version": "1.0.0",
+  "description": "push npm tar to registry",
+  "main": "dist/push-npm-tar.mjs",
+  "module": "dist/push-npm-tar.mjs",
+  "type": "module",
+  "bin": {
+    "push-npm-tar": "dist/push-npm-tar.bin.mjs"
+  },
+  "keywords": [
+    "push",
+    "npm"
+  ],
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build",
+    "test": "vitest",
+    "lint": "eslint --ext .ts --fix",
+    "lint-staged": "lint-staged",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "**/*.ts": [
+      "eslint --fix"
+    ]
+  },
+  "author": {
+    "name": "cdu",
+    "email": "chuyuandu@163.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chuyuandu/fetch-npm-tar.git"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "package.json",
+    "README.md"
+  ],
+  "dependencies": {
+    "arg": "^5.0.2",
+    "chalk": "^5.4.1",
+    "inquirer": "^12.6.0",
+    "ora": "^8.2.0",
+    "p-limit": "^6.2.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.25.1",
+    "@types/node": "20",
+    "eslint": "^9.25.1",
+    "eslint-config-prettier": "^10.1.2",
+    "eslint-plugin-prettier": "^5.2.6",
+    "globals": "^16.0.0",
+    "husky": "^9.1.7",
+    "jiti": "^2.4.2",
+    "lint-staged": "^15.5.1",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.31.0",
+    "vite": "^8.0.1",
+    "vitest": "^4.1.0"
+  }
+}
