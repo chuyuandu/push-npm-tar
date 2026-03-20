@@ -4,7 +4,9 @@ import { readdir } from 'node:fs/promises';
 import { join, basename } from 'node:path';
 import https from 'node:https';
 import http from 'node:http';
-import { spawn } from 'node:child_process';
+import { exec } from 'node:child_process';
+import { promisify } from 'node:util';
+const execAsync = promisify(exec);
 import chalk from 'chalk';
 import ora from 'ora';
 import pLimit from 'p-limit';
@@ -28,7 +30,7 @@ export function doPush(args: IArgType) {
       console.log(
         chalk.green(`找到 ${pkgs.length} 个包，准备上传到 ${curRegistry}：`),
       );
-      const installing = ora().start('正在上传包依赖...');
+      const installing = ora().start('正在上传包依赖...\n');
       const limit = pLimit(args['--limit'] || cpus().length * 2);
 
       const uploadList = pkgs.map(pkg => {
@@ -48,7 +50,7 @@ export function doPush(args: IArgType) {
       });
       return Promise.all(uploadList).finally(() => {
         installing.stop();
-        console.log(chalk.green('所有包上传完成！'));
+        // console.log(chalk.green('所有包上传完成！'));
       });
     })
     .catch(err => {
@@ -87,30 +89,24 @@ async function pushFile(pkg: PkgInfo, curRegistry: string, args: IArgType) {
   return uploadPackage(pkg, curRegistry, args);
 }
 
-function uploadPackage(
+async function uploadPackage(
   pkg: PkgInfo,
   curRegistry: string,
   args: IArgType,
 ): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const publishArgs = [
-      'publish',
-      pkg.path,
-      '--registry',
-      curRegistry,
-      '--provenance',
-      'false',
-    ];
-    const child = spawn('npm', publishArgs, {
+  // 使用 exec（Promise）调用 npm publish，exec 使用 shell 在 PATH 中查找可执行文件
+  const cmd = `npm publish ${pkg.path} --registry ${
+    curRegistry
+  } --provenance=false`;
+  try {
+    await execAsync(cmd, {
       cwd: args.cwd,
-      stdio: 'inherit',
+      maxBuffer: 10 * 1024 * 1024,
     });
-    child.on('error', err => reject(err));
-    child.on('close', code => {
-      if (code === 0) resolve();
-      else reject(new Error(`npm publish exited with code ${code}`));
-    });
-  });
+  } catch (err: any) {
+    // 如果子进程返回非 0，err.code / err.stderr 可用于排查
+    throw new Error(err?.message || 'npm publish failed');
+  }
 }
 
 // 获取指定目录下的 .tgz 文件列表（递归）
