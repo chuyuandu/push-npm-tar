@@ -48,7 +48,7 @@ export default defineConfig({
       name: getPackageNameCamelCase(),
       formats: ['es'],
       fileName: (format, entryName: string) => {
-        return fileName[`${entryName}_${format}`];
+        return fileName[`${entryName}_${format}` as keyof typeof fileName];
       },
     },
     rollupOptions: {

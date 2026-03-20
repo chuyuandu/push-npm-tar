@@ -1,6 +1,6 @@
 {
   "name": "push-npm-tar",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "push npm tar to registry",
   "main": "dist/push-npm-tar.mjs",
   "module": "dist/push-npm-tar.mjs",
@@ -10,11 +10,13 @@
   },
   "keywords": [
     "push",
-    "npm"
+    "npm",
+    "fetch-npm-tar"
   ],
   "scripts": {
     "dev": "vite build --watch",
     "build": "vite build",
+    "push": "tsx src/bin.ts",
     "test": "vitest",
     "lint": "eslint --ext .ts --fix",
     "lint-staged": "lint-staged",
@@ -31,7 +33,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chuyuandu/fetch-npm-tar.git"
+    "url": "git+https://github.com/chuyuandu/push-npm-tar.git"
   },
   "license": "MIT",
   "publishConfig": {
@@ -62,7 +64,8 @@
     "husky": "^9.1.7",
     "jiti": "^2.4.2",
     "lint-staged": "^15.5.1",
-    "prettier": "^3.5.3",
+    "prettier": "^3.8.1",
+    "tsx": "^4.21.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.31.0",
     "vite": "^8.0.1",

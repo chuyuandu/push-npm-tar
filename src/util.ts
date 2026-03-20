@@ -9,22 +9,24 @@ export const arg_declare = {
   '--version': Boolean,
   // 最大并发上传数, 最小为 1， 默认为 cpu 核心数的 2 倍
   '--limit': Number,
+  // tgz文件存放路径，默认为当前工作目录下的 storage 文件夹
+  '--dir': String,
   // 目标仓库地址
   '--registry': String,
   // alias
   '-h': '--help',
   '-v': '--version',
-  '-f': '--lockfile',
   '-l': '--limit',
   '-r': '--registry',
+  '-d': '--dir',
 };
 /** args 参数解析结果类型 */
 // export type IArgType = Result<typeof arg_declare>;
 export type IArgType = Result<typeof arg_declare> & {
   /** 当前工作目录 */
   cwd: string;
-  /** 下载文件的保存目录 */
-  tgzFolder: string;
+  // /** 下载文件的保存目录 */
+  // tgzFolder: string;
 };
 
 /** 下载文件的保存目录名 */
@@ -42,32 +44,25 @@ const params = [
     des: '查看帮助信息',
   },
   {
-    name: '--lockfile',
-    alias: '-f',
-    des: `指定 ${chalk.yellow('pnpm-lock.yaml')} 文件路径,适用于下载某个项目的所有依赖
-    如果没有该文件，但是有 package-lock.json、 npm-shrinkwrap.json 或 yarn.lock 文件
-    则可以通过 pnpm import 命令生成
-    都没有的话，可以直接通过 pnpm i 生成`,
-  },
-  {
-    name: ['--no-deps'],
-    des: `只解析当前包，不解析递归依赖
-    指定文件时，则只解析 importers[''']['dependencies] 下的依赖，即 package.json 的 ${chalk.yellow('dependencies')} 声明的依赖`,
-  },
-  {
     name: '--limit',
     alias: '-l',
-    des: '查看当前版本号',
+    des: '最大并发上传数, 最小为 1， 默认为 cpu 核心数的 2 倍',
   },
   {
-    name: ['其它参数'],
-    des: `要下载的包名及可选的版本，支持多个，以空格隔开，包名写法参考 ${chalk.yellow('npm install')} 时的语法，仅在未指定 lockfile 时生效`,
+    name: '--registry',
+    alias: '-r',
+    des: '目标仓库地址',
+  },
+  {
+    name: '--dir',
+    alias: '-d',
+    des: 'tgz 文件存放路径',
   },
 ];
 
 /** 帮助文档 */
 export const helpContent = `
-${chalk.greenBright(`通过命令行直接下载指定包及所有递归依赖或某个项目所有依赖包到当前目录下的 ${chalk.blueBright(tgzFolderName)} 目录下`)}
+${chalk.greenBright(`通过命令行将通过${chalk.blueBright('fetch-npm-tar')}下载的tgz文件上传到私有npm仓库中`)}
 
 ${params
   .map(item => {
@@ -105,4 +100,13 @@ export function checkVersion(currentVersion: string, wait = 500) {
       resolve();
     }
   });
+}
+
+/** 从指定目录获取 npm config 设置的 registry */
+export function getRegistry(dir: string) {
+  const stdout = execSync('npm config get registry', {
+    cwd: dir,
+    encoding: 'utf-8',
+  });
+  return stdout.trim();
 }
