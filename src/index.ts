@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { readdir, mkdir, appendFile, writeFile } from 'node:fs/promises';
-import { join, basename } from 'node:path';
+import { join, basename, isAbsolute, resolve } from 'node:path';
 import https from 'node:https';
 import http from 'node:http';
 import { exec } from 'node:child_process';
@@ -22,7 +22,9 @@ import { cpus } from 'node:os';
 
 export function doPush(args: IArgType) {
   const tgzFolder = args['--dir']
-    ? join(args.cwd, args['--dir'])
+    ? isAbsolute(args['--dir'])
+      ? args['--dir']
+      : resolve(args.cwd, args['--dir'])
     : join(args.cwd, 'storage');
   getTgzFiles(tgzFolder)
     .then(async files => {
@@ -36,17 +38,17 @@ export function doPush(args: IArgType) {
       const logsDir = join(args.cwd, 'logs');
       try {
         await mkdir(logsDir, { recursive: true });
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
-        // ignore
+        console.error(e);
+        process.exit(1);
       }
       const errorLog = join(logsDir, 'errors.log');
       // clear previous log
       try {
         await writeFile(errorLog, '', { encoding: 'utf8' });
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
-        // ignore
+        console.error(e);
+        process.exit(1);
       }
 
       // counters
