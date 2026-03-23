@@ -1,3 +1,5 @@
 node_modules
 _downloaded_tgz_files_
 dist
+logs
+.npmrc
