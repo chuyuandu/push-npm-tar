@@ -11,6 +11,7 @@
   "keywords": [
     "push",
     "npm",
+    "push-npm-tar",
     "fetch-npm-tar"
   ],
   "scripts": {

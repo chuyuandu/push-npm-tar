@@ -107,7 +107,8 @@ export function checkVersion(currentVersion: string, args: IArgType) {
     const latestVersion = getLatestVersion();
     if (latestVersion !== currentVersion) {
       if (latestVersion) {
-        console.warn(`当前版本已更新到 ${latestVersion}，请先更新版本！`);
+        const msg = `当前版本已更新到 ${latestVersion}, 请先更新版本！`;
+        console.log(chalk.red(msg));
       }
       // setTimeout(() => resolve(), 500);
       process.exit(0);
