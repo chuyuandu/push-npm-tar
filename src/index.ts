@@ -176,18 +176,9 @@ async function pushFile(pkg: PkgInfo, curRegistry: string, args: IArgType) {
   await uploadPackage(pkg, curRegistry, args);
   // 上传成功后调整 latest 标签，只指向最大的正式版本（非 prerelease）
   try {
-    const updated = await getPackageVersions(name, curRegistry, args);
-    const stableVersions = updated.filter(v => isStableVersion(v));
-    if (stableVersions.length === 0) {
-      // 没有正式版本，移除 latest（串行执行以避免并发冲突）
-      await enqueueSetLatest(name, null, curRegistry, args.cwd);
-      return;
-    }
-    const maxStable = stableVersions.reduce((a, b) =>
-      semver.compare(a, b) >= 0 ? a : b,
-    );
-    // 串行执行 dist-tag 更新，避免多个并发 upload 相互覆盖
-    await enqueueSetLatest(name, maxStable, curRegistry, args.cwd);
+    // 不在这里使用预先计算的版本入队；改为在队列执行时重新从 registry 拉取并计算最大稳定版本，
+    // 以避免并发上传导致的竞态（较旧计算结果覆盖较新版本）问题。
+    await enqueueRecomputeLatest(name, curRegistry, args.cwd);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (err) {
     // 调整标签失败不影响整体上传流程，记录为成功（但不抛出）
@@ -232,18 +223,34 @@ async function setLatestTag(
   });
 }
 
-function enqueueSetLatest(
-  name: string,
-  version: string | null,
-  registry: string,
-  cwd: string,
-) {
+/**
+ * 在队列中入列一个任务：在执行时重新从 registry 拉取版本列表并计算最大的稳定版本，
+ * 然后把 `latest` 指向该版本（或在没有稳定版本时移除 latest）。
+ * 这样能避免在上传时预先计算的版本被并发上传导致覆盖的问题。
+ */
+function enqueueRecomputeLatest(name: string, registry: string, cwd: string) {
   const prev = tagQueue.get(name) || Promise.resolve();
   const next = prev
     .catch(() => {
       // ignore previous errors
     })
-    .then(() => setLatestTag(name, version, registry, cwd))
+    .then(async () => {
+      try {
+        const updated = await getPackageVersions(name, registry, {} as any);
+        const stableVersions = updated.filter(v => isStableVersion(v));
+        if (stableVersions.length === 0) {
+          await setLatestTag(name, null, registry, cwd);
+          return;
+        }
+        const maxStable = stableVersions.reduce((a, b) =>
+          semver.compare(a, b) >= 0 ? a : b,
+        );
+        await setLatestTag(name, maxStable, registry, cwd);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (e) {
+        // ignore errors from recompute
+      }
+    })
     .finally(() => {
       if (tagQueue.get(name) === next) tagQueue.delete(name);
     });
