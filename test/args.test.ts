@@ -9,6 +9,7 @@ describe('show version', () => {
       handleArgs({
         _: [],
         '--version': true,
+        '--skipVersionCheck': true,
         cwd: '_virtual_',
       }),
     ).toEqual(pkg.version);
@@ -21,6 +22,7 @@ describe('show help', () => {
       handleArgs({
         _: [],
         '--help': true,
+        '--skipVersionCheck': true,
         cwd: '_virtual_',
       }),
     ).toEqual(helpContent);
