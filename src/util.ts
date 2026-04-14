@@ -13,12 +13,15 @@ export const arg_declare = {
   '--dir': String,
   // 目标仓库地址
   '--registry': String,
+  // 是否跳过工具版本检测，默认为 false
+  '--skipVersionCheck': Boolean,
   // alias
   '-h': '--help',
   '-v': '--version',
   '-l': '--limit',
   '-r': '--registry',
   '-d': '--dir',
+  '-s': '--skipVersionCheck',
 };
 /** args 参数解析结果类型 */
 // export type IArgType = Result<typeof arg_declare>;
@@ -58,6 +61,11 @@ const params = [
     alias: '-d',
     des: 'tgz 文件存放路径',
   },
+  {
+    name: '--skipVersionCheck',
+    alias: '-s',
+    des: '是否跳过版本检查，默认会自动检查 `push-npm-tar`包的版本更新\n并要求最新版才可以推送',
+  },
 ];
 
 /** 帮助文档 */
@@ -90,12 +98,19 @@ export function getLatestVersion(): string {
   return version;
 }
 /** 版本更新检测 */
-export function checkVersion(currentVersion: string, wait = 500) {
+export function checkVersion(currentVersion: string, args: IArgType) {
   return new Promise<void>(function (resolve) {
+    if (args['--skipVersionCheck']) {
+      resolve();
+      return;
+    }
     const latestVersion = getLatestVersion();
     if (latestVersion !== currentVersion) {
-      console.warn(`当前版本已更新到 ${latestVersion}，建议先更新版本！`);
-      setTimeout(() => resolve(), wait);
+      if (latestVersion) {
+        console.warn(`当前版本已更新到 ${latestVersion}，请先更新版本！`);
+      }
+      // setTimeout(() => resolve(), 500);
+      process.exit(0);
     } else {
       resolve();
     }

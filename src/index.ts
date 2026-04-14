@@ -153,14 +153,14 @@ export function handleArgs(args: IArgType) {
 
   if (args['--version']) {
     console.log(currentVersion);
-    checkVersion(currentVersion);
+    checkVersion(currentVersion, args);
     return currentVersion;
   } else if (args['--help']) {
     console.log(helpContent);
-    checkVersion(currentVersion);
+    checkVersion(currentVersion, args);
     return helpContent;
   } else {
-    return checkVersion(currentVersion, 2000).then(() => {
+    return checkVersion(currentVersion, args).then(() => {
       return doPush(args);
     });
   }
